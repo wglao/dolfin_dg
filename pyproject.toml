@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dolfin_dg"
+authors = [
+    {name = "Nate Sime", email = "njcs4@cam.ac.uk"}
+]
+description = "Utility module for automatic generation of DG FE formulations."
+readme = "README.md"
+requires-python = ">=3.5"
+# keywords = ["one", "two"]
+license = {text = "license.rtf"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+# dependencies = [
+#     "ufl",
+# ]
+dynamic = ["version"]
+
+# [project.optional-dependencies]
+
+# [project.scripts]
+
+# ... other project metadata fields as listed in:
+#     https://packaging.python.org/en/latest/guides/writing-pyproject-toml/
