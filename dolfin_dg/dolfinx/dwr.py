@@ -2,7 +2,8 @@ import numpy as np
 from petsc4py import PETSc
 
 import ufl
-import dolfinx
+import dolfinx as dfx
+import dolfinx.fem as fem
 
 
 def dual(form, w, z=None):
@@ -50,11 +51,11 @@ class NonlinearAPosterioriEstimator:
         dual_j = ufl.derivative(self.j, self.u_h, w)
 
         # Solve the dual problem
-        # z_s = dolfinx.fem.Function(self.V_star)
+        # z_s = fem.Function(self.V_star)
         if petsc_options is None:
             petsc_options = {"ksp_type": "preonly",
                              "pc_type": "lu"}
-        problem = dolfinx.fem.petsc.LinearProblem(
+        problem = fem.petsc.LinearProblem(
             dual_M, dual_j, bcs=self.bcs_star, petsc_options=petsc_options)
         z_s = problem.solve()
 
@@ -64,13 +65,13 @@ class NonlinearAPosterioriEstimator:
         # Evaluate the residual in the enriched space
         v = self.F.arguments()[0]
 
-        DG0 = dolfinx.fem.FunctionSpace(self.V_star.mesh, ("DG", 0))
+        DG0 = fem.functionspace(self.V_star.mesh, ("DG", 0))
         dg_0 = ufl.TestFunction(DG0)
 
         dwr = ufl.replace(self.F, {v: z*dg_0})
 
-        dwr_vec = dolfinx.fem.petsc.assemble_vector(
-            dolfinx.fem.form(dwr))
+        dwr_vec = fem.petsc.assemble_vector(
+            fem.form(dwr))
         dwr_vec.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         dwr_vec.abs()
         return dwr_vec
@@ -79,7 +80,7 @@ class NonlinearAPosterioriEstimator:
         mesh = self.V_star.mesh
 
         # Put the values of the projection into cell tags
-        cf = dolfinx.mesh.meshtags(
+        cf = dfx.mesh.meshtags(
             mesh, mesh.topology.dim,
             np.arange(mesh.topology.index_map(
                 mesh.topology.dim).size_local, dtype=np.int32), eta)

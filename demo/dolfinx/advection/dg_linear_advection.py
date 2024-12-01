@@ -1,4 +1,5 @@
-import dolfinx
+import dolfinx as dfx
+import dolfinx.fem as fem
 import numpy as np
 import ufl
 from mpi4py import MPI
@@ -19,17 +20,17 @@ hs = np.zeros_like(n_eles, dtype=np.double)
 
 for run_no, n_ele in enumerate(n_eles):
 
-    mesh = dolfinx.mesh.create_unit_square(
-        comm, n_ele, n_ele, cell_type=dolfinx.mesh.CellType.triangle,
-        ghost_mode=dolfinx.cpp.mesh.GhostMode.shared_facet)
-    V = dolfinx.fem.FunctionSpace(mesh, ("DG", poly_o))
+    mesh = dfx.mesh.create_unit_square(
+        comm, n_ele, n_ele, cell_type=dfx.mesh.CellType.triangle,
+        ghost_mode=dfx.cpp.mesh.GhostMode.shared_facet)
+    V = fem.functionspace(mesh, ("DG", poly_o))
 
-    u = dolfinx.fem.Function(V)
+    u = fem.Function(V)
     v = ufl.TestFunction(V)
 
     x = ufl.SpatialCoordinate(mesh)
     u_soln = ufl.exp(x[0] - x[1])
-    b = dolfinx.fem.Constant(mesh, np.array((1, 1), dtype=np.double))
+    b = dfx.fem.Constant(mesh, np.array((1, 1), dtype=np.double))
 
     n = ufl.FacetNormal(mesh)
 
@@ -49,25 +50,25 @@ for run_no, n_ele in enumerate(n_eles):
 
     J = ufl.derivative(F, u)
 
-    F, J = dolfinx.fem.form(F), dolfinx.fem.form(J)
-    problem = dolfin_dg.dolfinx.nls.NonlinearPDE_SNESProblem(F, J, u, [])
+    F, J = dfx.fem.form(F), dfx.fem.form(J)
+    problem = dolfin_dg.dfx.nls.NonlinearPDE_SNESProblem(F, J, u, [])
 
     snes = PETSc.SNES().create(mesh.comm)
     opts = PETSc.Options()
     opts["snes_monitor"] = None
     snes.setFromOptions()
-    snes.setFunction(problem.F_mono, dolfinx.fem.petsc.create_vector(F))
-    snes.setJacobian(problem.J_mono, J=dolfinx.fem.petsc.create_matrix(J))
+    snes.setFunction(problem.F_mono, dfx.fem.petsc.create_vector(F))
+    snes.setJacobian(problem.J_mono, J=dfx.fem.petsc.create_matrix(J))
     snes.getKSP().getPC().setType("lu")
     snes.getKSP().getPC().setFactorSolverType("mumps")
     snes.solve(None, u.vector)
 
     l2error_u = comm.allreduce(
-        dolfinx.fem.assemble.assemble_scalar(dolfinx.fem.form(
+        dfx.fem.assemble.assemble_scalar(dfx.fem.form(
             (u - u_soln) ** 2 * ufl.dx)) ** 0.5,
         op=MPI.SUM)
 
-    h_measure = dolfinx.cpp.mesh.h(
+    h_measure = dfx.cpp.mesh.h(
         mesh._cpp_object, 2, np.arange(mesh.topology.index_map(2).size_local,
                                        dtype=np.int32))
     hmin = mesh.comm.allreduce(h_measure.min(), op=MPI.MIN)
