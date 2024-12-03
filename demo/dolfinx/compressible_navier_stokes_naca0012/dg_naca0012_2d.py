@@ -184,10 +184,10 @@ for ref_level in range(n_ref_max):
     info(f"DoFs: {n_dofs}, Drag: {drag_val:.5e}, Lift: {lift_val:.5e}")
     results += [(n_dofs, drag_val, lift_val)]
 
-    with dfx.io.VTXWriter(
-            mesh.comm, f"adapted_naca0012_meshes_{ref_level}.bp",
-            [u_vec.sub(0).collapse()], "bp4") as f:
-        f.write(0.0)
+    # with dfx.io.VTXWriter(
+    #         mesh.comm, f"adapted_naca0012_meshes_{ref_level}.bp",
+    #         [u_vec.sub(0).collapse()], "bp4") as f:
+    #     f.write(0.0)
 
     # If we're not on the last refinement level, apply goal oriented
     # dual-weighted-residual error estimation refinement.
