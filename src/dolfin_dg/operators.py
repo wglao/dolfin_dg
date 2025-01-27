@@ -426,7 +426,7 @@ class CompressibleNavierStokesOperator:
         self.mu = mu
         self.Pr = Pr
 
-    def generate_fem_formulation(self, U, v, dx=ufl.dx, dS=ufl.dS, vt=None,
+    def generate_fem_formulation(self, U, v, f=None, dx=ufl.dx, dS=ufl.dS, vt=None,
                                  c_ip=20.0, h_measure=None):
         # -- Euler component
         ce = CompressibleEulerOperator(None, None, self.bcs, gamma=self.gamma)
@@ -448,6 +448,9 @@ class CompressibleNavierStokesOperator:
                 _, alpha_ext = dolfin_dg.penalty.interior_penalty(
                     fos_adiabatic, U, function, c_ip=c_ip, h_measure=h_measure)
                 F += fos_adiabatic.exterior([alpha_ext], function, ds=bdry)
+        
+        if f is not None:
+            F -= ufl.inner(f,v) * dx
 
         return F
 
